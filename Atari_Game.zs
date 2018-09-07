@@ -1,14 +1,29 @@
 // Atari Game Script
-// v0.2
-// 19th August, 2018
+// v0.3
+// 24th August, 2018
 // By: ZoriaRPG
+
+import "std.zh"
 
 const float MOVE_RATE = 1;
 
 const int PLAYER_WIDTH = 5;
 const int PLAYER_HEIGHT = 8;
 
-const int MIN_ZC_ALPHA_BUILD = 33; //Alphas are negatives, so we neex to check maximum, not minimum.
+const int MIN_ZC_ALPHA_BUILD = 35; //Alphas are negatives, so we neex to check maximum, not minimum.
+
+typedef const int DEFINE;
+
+//PALETTE INDEX COLUMN FOR EACH GAME OBJECT
+DEFINE COL_ENEMY 		= 0x0A;
+DEFINE COL_ENEMY_WEAPON 	= 0x08;
+DEFINE COL_PLAYER_WEAPON 	= 0x09;
+DEFINE COL_WALL 		= 0x04;
+DEFINE COL_BACKGROUND 		= 0x00;
+DEFINE COL_DOOR 		= 0x01;
+DEFINE COL_ITEM 		= 0x0F;
+
+ffc player;
 
 
 global script Atari
@@ -16,7 +31,7 @@ global script Atari
 	void run()
 	{
 
-		ffc player = Screen->LoadFFC(1);
+		player = Screen->LoadFFC(1);
 		player->Data = 188;
 		bitmap playfield = Game->LoadBitmapID(RT_SCREEN);
 		Link->Invisible = true; Link->DrawYOffset = -32768;
@@ -92,27 +107,14 @@ global script Atari
 		int col[8]; bool coll = true;
 		switch(dir)
 		{
-			case DIR_LEFT:
-			{
-				for ( int q = 0; q < PLAYER_HEIGHT; ++q )
-				{
-					col[q] = bmp->GetPixel(p->X-1, p->Y+q) * 10000;
-				}
-				
-				for ( int q = 0; q < PLAYER_HEIGHT; ++q )
-				{
-					if ( ( col[q] % 16 ) != 0 ) 
-					{
-						return false;
-					}
-				}
-				return true;
-			}
+			
 			case DIR_RIGHT:
 			{
+				TraceS("Right");
 				for ( int q = 0; q < PLAYER_HEIGHT; ++q )
 				{
 					col[q] = bmp->GetPixel(p->X+PLAYER_WIDTH, p->Y+q) * 10000;
+					Trace(bmp->GetPixel(p->X-1, p->Y+q));
 				}
 				for ( int q = 0; q < PLAYER_HEIGHT; ++ q )
 				{
@@ -124,11 +126,31 @@ global script Atari
 				}
 				return true;
 			}
+			case DIR_LEFT:
+			{
+				TraceS("Left");
+				for ( int q = 0; q < PLAYER_HEIGHT; ++q )
+				{
+					col[q] = bmp->GetPixel(p->X-1, p->Y+q) * 10000;
+					Trace(bmp->GetPixel(p->X-1, p->Y+q));
+				}
+				
+				for ( int q = 0; q < PLAYER_HEIGHT; ++q )
+				{
+					if ( ( col[q] % 16 ) != 0 ) 
+					{
+						return false;
+					}
+				}
+				return true;
+			}
 			case DIR_UP:
 			{
+				TraceS("Up");
 				for ( int q = 0; q < PLAYER_WIDTH; ++q )
 				{
 					col[q] = bmp->GetPixel(p->X+q, p->Y-1) * 10000;
+					Trace(bmp->GetPixel(p->X-1, p->Y+q));
 				}
 				for ( int q = 0; q < PLAYER_WIDTH; ++ q )
 				{
@@ -141,9 +163,11 @@ global script Atari
 			}
 			case DIR_DOWN:
 			{
+				TraceS("Down");
 				for ( int q = 0; q < PLAYER_WIDTH; ++q )
 				{
 					col[q] = bmp->GetPixel(p->X+q, p->Y+PLAYER_HEIGHT) * 10000;
+					Trace(bmp->GetPixel(p->X-1, p->Y+q));
 				}
 				for ( int q = 0; q < PLAYER_WIDTH; ++q )
 				{
@@ -218,4 +242,9 @@ global script onContinue
 	{
 		Link->Invisible = true; Link->DrawYOffset = -32768;
 	}
+}
+
+ffc script Atari_version_0_3_2
+{
+	void run(){}
 }
