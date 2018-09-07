@@ -19,6 +19,7 @@ typedef const int DEFINE;
 
 
 DEFINE COL_BACKGROUND 		= 0x00;
+DEFINE COL_PLAYFIELD 		= 0x10;
 DEFINE COL_DOOR 		= 0x01;
 DEFINE COL_PLAYER 		= 0x02;
 DEFINE COL_WALL 		= 0x04;
@@ -29,104 +30,121 @@ DEFINE COL_ENEMY 		= 0x0A;
 
 DEFINE COL_ITEM 		= 0x0F;
 
-ffc player;
+DEFINE NUM_PLAYERS = 5;
 
 
-global script Atari
+
+typedef ffc sprite;
+
+sprite player[NUM_PLAYERS];
+
+bitmap playfield;
+
+ffc script Player
 {
-	void run()
+	DEFINE ACTION_SPRITE = 0;
+	DEFINE ACTION_SLOT = 1;
+	DEFINE ACTION_COMBO = 188;
+	
+	DEFINE ACTION_HEIGHT = 8;
+	DEFINE ACTION_WIDTH = 5;
+	void run(){}
+	void init(sprite s, int sprite_index, int sprite_combo, int screen_slot)
 	{
-
-		player = Screen->LoadFFC(1);
-		player->Data = 188;
-		bitmap playfield = Game->LoadBitmapID(RT_SCREEN);
-		Link->Invisible = true; Link->DrawYOffset = -32768;
 		
-		check_min_zc_build();
-		
-		while(1)
-		{
-			Link->X = 60; 
-			Link->Y = 60;
-			if ( Input->Press[CB_LEFT] ) 
-			{
-				if ( canmove(DIR_LEFT, player, playfield) )
-				{
-					--player->X;
-				}
-			}
-			if ( Input->Hold[CB_LEFT] ) 
-			{
-				if ( canmove(DIR_LEFT, player, playfield) )
-				{
-					--player->X;
-				}
-			}
-			if ( Input->Press[CB_DOWN] ) 
-			{
-				if ( canmove(DIR_DOWN, player, playfield) )
-				{
-					++player->Y;
-				}
-			}
-			if ( Input->Hold[CB_DOWN] ) 
-			{
-				if ( canmove(DIR_DOWN, player, playfield) )
-				{
-					++player->Y;
-				}
-			}
-			if ( Input->Press[CB_UP] ) 
-			{
-				if ( canmove(DIR_UP, player, playfield) )
-				{
-					--player->Y;
-				}
-			}
-			if ( Input->Hold[CB_UP] ) 
-			{
-				if ( canmove(DIR_UP, player, playfield) )
-				{
-					--player->Y;
-				}
-			}
-			if ( Input->Press[CB_RIGHT] ) 
-			{
-				if ( canmove(DIR_RIGHT, player, playfield) )
-				{
-					++player->X;
-				}
-			}
-			if ( Input->Hold[CB_RIGHT] ) 
-			{
-				if ( canmove(DIR_RIGHT, player, playfield) )
-				{
-					++player->X;
-				}
-			}
-			Waitdraw();
-			Waitframe();
-		}
+		s[sprite_index] = Screen->LoadFFC(screen_slot);
+		s[sprite_index]->Data = sprite_combo;
 	}
-	bool canmove(int dir, ffc p, bitmap bmp)
+	
+	
+	void move_sprite(sprite s, int sprite_index, bitmap bmp, int sprite_height, int sprite_width, int check_col)
 	{
-		int col[8]; bool coll = true;
+		if ( Input->Press[CB_LEFT] ) 
+		{
+			if ( canmove(DIR_LEFT, s, sprite_index, bmp, sprite_height, sprite_width, check_col) )
+			{
+				--s[sprite_index]->X;
+			}
+		}
+		if ( Input->Hold[CB_LEFT] ) 
+		{
+			if ( canmove(DIR_LEFT, s, sprite_index, bmp, sprite_height, sprite_width, check_col) )
+			{
+				--s[sprite_index]->X;
+			}
+		}
+		if ( Input->Press[CB_DOWN] ) 
+		{
+			if ( canmove(DIR_DOWN, s, sprite_index, bmp, sprite_height, sprite_width, check_col) )
+			{
+				++s[sprite_index]->Y;
+			}
+		}
+		if ( Input->Hold[CB_DOWN] ) 
+		{
+			if ( canmove(DIR_DOWN, s, sprite_index, bmp, sprite_height, sprite_width, check_col) )
+			{
+				++s[sprite_index]->Y;
+			}
+		}
+		if ( Input->Press[CB_UP] ) 
+		{
+			if ( canmove(DIR_UP, s, sprite_index, bmp, sprite_height, sprite_width, check_col) )
+			{
+				--s[sprite_index]->Y;
+			}
+		}
+		if ( Input->Hold[CB_UP] ) 
+		{
+			if ( canmove(DIR_UP, s, sprite_index, bmp, sprite_height, sprite_width, check_col) )
+			{
+				--s[sprite_index]->Y;
+			}
+		}
+		if ( Input->Press[CB_RIGHT] ) 
+		{
+			if ( canmove(DIR_RIGHT, s, sprite_index, bmp, sprite_height, sprite_width, check_col) )
+			{
+				++s[sprite_index]->X;
+			}
+		}
+		if ( Input->Hold[CB_RIGHT] ) 
+		{
+			if ( canmove(DIR_RIGHT, s, sprite_index, bmp, sprite_height, sprite_width, check_col) )
+			{
+				++s[sprite_index]->X;
+			}
+		}
+
+	}
+	
+	//bool canmove(int dir, ffc p, bitmap bmp)
+	bool canmove(int dir, sprite p, int sprite_index, bitmap bmp, int sprite_height, int sprite_width, int check_col) 
+	//canmove(dir, player, INDEX, playfield, PLAYER_HEIGHT, PLAYER_WIDTH, COL_PLAYFIELD);
+	//sprite width = PLAYER_WIDTH
+	//sprite height = PLAYER_HEIGHT
+	//check_col is the pixel CSet column to check against, 16 for the player?
+	{
+		//int col[8]; 
+		//bool coll = true;
 		switch(dir)
 		{
 			
 			case DIR_RIGHT:
 			{
 				TraceS("Right");
-				for ( int q = 0; q < PLAYER_HEIGHT; ++q )
+				/*
+				for ( int q = 0; q < sprite_height; ++q )
 				{
-					col[q] = bmp->GetPixel(p->X+PLAYER_WIDTH, p->Y+q) * 10000;
+					col[q] = bmp->GetPixel(p->X+sprite_width, p->Y+q) * 10000;
 					Trace(bmp->GetPixel(p->X-1, p->Y+q));
 				}
-				for ( int q = 0; q < PLAYER_HEIGHT; ++ q )
+				*/
+				for ( int q = 0; q < sprite_height; ++ q )
 				{
-					if ( ( col[q] % 16 ) != 0 ) 
+					if ( ( (bmp->GetPixel(p->X+sprite_width, p->Y+q) * 10000) % check_col ) != 0 ) 
 					{
-						TraceNL(); TraceS("Pixel Colour Was: "); Trace(col);
+						TraceNL(); TraceS("Pixel Colour Was: "); Trace((bmp->GetPixel(p->X+sprite_width, p->Y+q) * 10000));
 						return false;
 					}
 				}
@@ -135,16 +153,18 @@ global script Atari
 			case DIR_LEFT:
 			{
 				TraceS("Left");
-				for ( int q = 0; q < PLAYER_HEIGHT; ++q )
+				/*
+				for ( int q = 0; q < sprite_height; ++q )
 				{
 					col[q] = bmp->GetPixel(p->X-1, p->Y+q) * 10000;
 					Trace(bmp->GetPixel(p->X-1, p->Y+q));
 				}
-				
-				for ( int q = 0; q < PLAYER_HEIGHT; ++q )
+				*/
+				for ( int q = 0; q < sprite_height; ++q )
 				{
-					if ( ( col[q] % 16 ) != 0 ) 
+					if ( ( (bmp->GetPixel(p->X-1, p->Y+q) * 10000) % check_col ) != 0 ) 
 					{
+						TraceNL(); TraceS("Pixel Colour Was: "); Trace((bmp->GetPixel(p->X-1, p->Y+q) * 10000));
 						return false;
 					}
 				}
@@ -153,15 +173,18 @@ global script Atari
 			case DIR_UP:
 			{
 				TraceS("Up");
-				for ( int q = 0; q < PLAYER_WIDTH; ++q )
+				/*
+				for ( int q = 0; q < sprite_width; ++q )
 				{
 					col[q] = bmp->GetPixel(p->X+q, p->Y-1) * 10000;
 					Trace(bmp->GetPixel(p->X-1, p->Y+q));
 				}
-				for ( int q = 0; q < PLAYER_WIDTH; ++ q )
+				*/
+				for ( int q = 0; q < sprite_width; ++ q )
 				{
-					if ( ( col[q] % 16 ) != 0 ) 
+					if ( ( (bmp->GetPixel(p->X+q, p->Y-1) * 10000) % check_col ) != 0 ) 
 					{
+						TraceNL(); TraceS("Pixel Colour Was: "); Trace((bmp->GetPixel(p->X+q, p->Y-1) * 10000));
 						return false;
 					}
 				}
@@ -170,15 +193,18 @@ global script Atari
 			case DIR_DOWN:
 			{
 				TraceS("Down");
-				for ( int q = 0; q < PLAYER_WIDTH; ++q )
+				/*
+				for ( int q = 0; q < sprite_width; ++q )
 				{
-					col[q] = bmp->GetPixel(p->X+q, p->Y+PLAYER_HEIGHT) * 10000;
+					col[q] = bmp->GetPixel(p->X+q, p->Y+sprite_height) * 10000;
 					Trace(bmp->GetPixel(p->X-1, p->Y+q));
 				}
-				for ( int q = 0; q < PLAYER_WIDTH; ++q )
+				*/
+				for ( int q = 0; q < sprite_width; ++q )
 				{
-					if ( ( col[q] % 16 ) != 0 ) 
+					if ( ( (bmp->GetPixel(p->X+q, p->Y+sprite_height) * 10000) % check_col ) != 0 ) 
 					{
+						TraceNL(); TraceS("Pixel Colour Was: "); Trace((bmp->GetPixel(p->X+q, p->Y+sprite_height) * 10000));
 						return false;
 					}
 				}
@@ -188,6 +214,33 @@ global script Atari
 		}
 		return true;
 	}
+}
+
+global script Atari
+{
+	const int PLAYFIELD = RT_SCREEN;
+	void run()
+	{
+
+		link.init();
+		Player.init(player, Player.ACTION_SPRITE, Player.ACTION_COMBO, Player.ACTION_SLOT);
+		playfield = Game->LoadBitmapID(PLAYFIELD);
+		
+		
+		check_min_zc_build();
+		
+		while(1)
+		{
+			
+			Player.move_sprite( player, Player.ACTION_SPRITE, playfield, Player.ACTION_HEIGHT, Player.ACTION_WIDTH, COL_PLAYFIELD );
+			
+			link.hold(); //call after checking inputs
+			Waitdraw();
+			Waitframe();
+		}
+	}
+	
+	
 	void check_min_zc_build()
 	{
 		if ( Game->Beta < MIN_ZC_ALPHA_BUILD )
@@ -224,13 +277,31 @@ global script Atari
 			
 		}
 	}
+	
+}
+
+
+ffc script link
+{
+	const int DRAWYOFS = -32768;
+	const int HOLDX = 60;
+	const int HOLDY = 60;
+	void run(){}
+	void init()
+	{
+		Link->Invisible = true; Link->DrawYOffset = DRAWYOFS;
+	}
+	void hold()
+	{
+		Link->X = HOLDX; Link->Y = HOLDY;
+	}
 }
 
 global script Init
 {
 	void run()
 	{
-		Link->Invisible = true; Link->DrawYOffset = -32768;
+		link.init();
 	}
 }
 
@@ -238,7 +309,7 @@ global script init
 {
 	void run()
 	{
-		Link->Invisible = true; Link->DrawYOffset = -32768;
+		link.init();
 	}
 }
 
@@ -246,11 +317,11 @@ global script onContinue
 {
 	void run()
 	{
-		Link->Invisible = true; Link->DrawYOffset = -32768;
+		link.init();
 	}
 }
 
-ffc script Atari_version_0_3_2
+ffc script Atari_version_0_4
 {
 	void run(){}
 }
