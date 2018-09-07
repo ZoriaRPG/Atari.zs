@@ -1,6 +1,6 @@
 // Atari Game Script
-// v0.3
-// 24th August, 2018
+// v0.4
+// 7th September, 2018
 // By: ZoriaRPG
 
 import "std.zh"
